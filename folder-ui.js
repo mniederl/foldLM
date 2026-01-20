@@ -37,6 +37,35 @@ const FolderUI = {
   ],
 
   /**
+   * Helper to construct notebook URL preserving authuser context
+   * @param {string} notebookId
+   * @returns {string} constructed URL
+   */
+  getNotebookUrl(notebookId) {
+    const path = window.location.pathname;
+    const search = window.location.search;
+    let baseUrl = 'https://notebooklm.google.com';
+
+    // Check for /u/X/ pattern
+    const userMatch = path.match(/^\/u\/\d+\//);
+    if (userMatch) {
+      baseUrl += userMatch[0].slice(0, -1); // remove trailing slash for consistency
+    }
+
+    let url = `${baseUrl}/notebook/${notebookId}`;
+
+    // valid params to preserve
+    const params = new URLSearchParams(search);
+    const authuser = params.get('authuser');
+
+    if (authuser) {
+      url += `?authuser=${authuser}`;
+    }
+
+    return url;
+  },
+
+  /**
    * Initialize the UI module
    */
   async init() {
@@ -808,7 +837,7 @@ const FolderUI = {
     // Click to open notebook
     el.addEventListener('click', (e) => {
       if (!e.target.closest('.nlm-folder-more-btn')) {
-        window.location.href = `https://notebooklm.google.com/notebook/${notebook.id}`;
+        window.location.href = this.getNotebookUrl(notebook.id);
       }
     });
 
@@ -836,7 +865,7 @@ const FolderUI = {
     titleCell.className = 'cell';
     titleCell.innerHTML = `<span class="icon-wrapper">${notebook.emoji || '📓'}</span><span class="title-text">${notebook.title || 'Untitled'}</span>`;
     titleCell.addEventListener('click', () => {
-      window.location.href = `https://notebooklm.google.com/notebook/${notebook.id}`;
+      window.location.href = this.getNotebookUrl(notebook.id);
     });
 
     // Cell 2: Sources
@@ -844,7 +873,7 @@ const FolderUI = {
     sourcesCell.className = 'cell meta';
     sourcesCell.textContent = notebook.sources || '0 Sources';
     sourcesCell.addEventListener('click', () => {
-      window.location.href = `https://notebooklm.google.com/notebook/${notebook.id}`;
+      window.location.href = this.getNotebookUrl(notebook.id);
     });
 
     // Cell 3: Date
@@ -852,7 +881,7 @@ const FolderUI = {
     dateCell.className = 'cell meta';
     dateCell.textContent = notebook.date || '';
     dateCell.addEventListener('click', () => {
-      window.location.href = `https://notebooklm.google.com/notebook/${notebook.id}`;
+      window.location.href = this.getNotebookUrl(notebook.id);
     });
 
     // Cell 4: Role
@@ -860,7 +889,7 @@ const FolderUI = {
     roleCell.className = 'cell meta';
     roleCell.textContent = 'Owner';
     roleCell.addEventListener('click', () => {
-      window.location.href = `https://notebooklm.google.com/notebook/${notebook.id}`;
+      window.location.href = this.getNotebookUrl(notebook.id);
     });
 
     // Cell 5: Actions Menu
