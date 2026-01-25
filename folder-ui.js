@@ -12,6 +12,7 @@ const FolderUI = {
   currentView: 'list', // 'list' or 'grid'
   isInitialized: false,
   isInjecting: false,
+  sortOrder: 'desc', // 'asc' or 'desc'
 
   // Available emojis for folders
   emojis: ['📁', '📂', '🗂️', '📚', '💼', '🎯', '⭐', '💡', '🔥', '💎', '🌟', '📌', '🚀', '🎨', '🎵', '🎬', '🧩', '🌈', '🌍', '🛠️'],
@@ -678,8 +679,13 @@ const FolderUI = {
 
     contentArea.appendChild(headerActions);
 
+    // Create a specific container for the view (grid/list)
+    const viewContainer = document.createElement('div');
+    viewContainer.className = 'nlm-view-container';
+    contentArea.appendChild(viewContainer);
+
     // Render contents based on initial view
-    this.renderFolderContents(folder, contentArea);
+    this.renderFolderContents(folder, viewContainer);
 
     modal.classList.add('visible');
 
@@ -723,11 +729,15 @@ const FolderUI = {
       this.createRipple(e, btn);
 
       // Re-render only contents
-      const contentArea = this.modalOverlay.querySelector('.nlm-folder-modal-content');
-      const container = contentArea.querySelector('.notebook-table, .nlm-folder-modal-grid, .nlm-folder-modal-empty');
-      if (container) container.remove();
-
-      this.renderFolderContents(folder, contentArea);
+      const viewContainer = this.modalOverlay.querySelector('.nlm-view-container');
+      if (viewContainer) {
+        viewContainer.innerHTML = ''; // Clear properly
+        this.renderFolderContents(folder, viewContainer);
+      } else {
+        // Fallback or error recovery
+        const contentArea = this.modalOverlay.querySelector('.nlm-folder-modal-content');
+        this.renderFolderContents(folder, contentArea);
+      }
     });
 
     return btn;
@@ -748,16 +758,84 @@ const FolderUI = {
     if (this.currentView === 'list') {
       const table = document.createElement('div');
       table.className = 'notebook-table';
-      table.innerHTML = `
+
+      // Inject styles for interactivity (no external font needed)
+      const style = document.createElement('style');
+      style.textContent = `
+        .header-cell.sort-date {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start; /* Move closer to text */
+          gap: 8px;
+          user-select: none;
+        }
+        .nlm-sort-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: inherit;
+          margin-right: -4px; /* Align visual edge */
+          position: relative;
+        }
+        .nlm-sort-icon {
+          width: 18px;
+          height: 18px;
+          fill: currentColor;
+          display: block;
+        }
+      `;
+      table.appendChild(style);
+
+      table.innerHTML += `
         <div class="header-row">
           <div class="header-cell">Title</div>
           <div class="header-cell">Sources</div>
-          <div class="header-cell">Date</div>
+          <div class="header-cell sort-date">
+            Date 
+            <button class="nlm-sort-btn" aria-label="Sort by date">
+              <svg class="nlm-sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+            </button>
+          </div>
           <div class="header-cell">Role</div>
           <div class="header-cell"></div>
         </div>
       `;
-      folder.notebooks.forEach(notebook => {
+
+      // Add click listener for sorting (only on the button)
+      const sortBtn = table.querySelector('.nlm-sort-btn');
+      sortBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent any bubbling issues
+        this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc';
+
+        // Re-render contents safely
+        if (container) {
+          container.innerHTML = '';
+          this.renderFolderContents(folder, container);
+        }
+      });
+
+      // Sort notebooks
+      const sortedNotebooks = [...folder.notebooks].sort((a, b) => {
+        let tA = new Date(a.date).getTime();
+        let tB = new Date(b.date).getTime();
+
+        // Handle invalid dates (treat as epoch 0)
+        if (isNaN(tA)) tA = 0;
+        if (isNaN(tB)) tB = 0;
+
+        if (this.sortOrder === 'asc') {
+          return tA - tB; // Oldest first
+        } else {
+          return tB - tA; // Newest first
+        }
+      });
+
+      sortedNotebooks.forEach(notebook => {
         this.createNotebookRow(notebook, folder.id, table);
       });
       container.appendChild(table);
