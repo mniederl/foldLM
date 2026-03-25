@@ -188,6 +188,60 @@ const FolderStorage = {
     },
 
     /**
+     * Export folders and view preferences for the current account scope.
+     * @returns {Promise<Object>} Serializable backup payload
+     */
+    async exportData() {
+        return {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            accountId: this.accountId || null,
+            viewPreference: await this.getViewPreference(),
+            folders: await this.getFolders()
+        };
+    },
+
+    /**
+     * Import folders for the current account scope.
+     * Accepts either an exported object payload or a raw folders array.
+     * @param {Object|Array} importedData
+     * @returns {Promise<Array>} Sanitized imported folders
+     */
+    async importData(importedData) {
+        const rawFolders = Array.isArray(importedData)
+            ? importedData
+            : importedData && Array.isArray(importedData.folders)
+                ? importedData.folders
+                : null;
+
+        if (!rawFolders) {
+            throw new Error('Invalid import file format.');
+        }
+
+        const importedAt = new Date().toISOString();
+        const sanitizedFolders = rawFolders
+            .filter(folder => folder && typeof folder === 'object')
+            .map((folder, index) => ({
+                ...folder,
+                id: typeof folder.id === 'string' && folder.id ? folder.id : `folder_${Date.now()}_${index}`,
+                name: typeof folder.name === 'string' && folder.name.trim() ? folder.name.trim() : 'New Folder',
+                emoji: typeof folder.emoji === 'string' && folder.emoji ? folder.emoji : '📁',
+                color: typeof folder.color === 'string' && folder.color ? folder.color : '#f8ccc8',
+                notebooks: Array.isArray(folder.notebooks) ? folder.notebooks : [],
+                createdAt: typeof folder.createdAt === 'string' && folder.createdAt ? folder.createdAt : importedAt
+            }));
+
+        await this.saveFolders(sanitizedFolders);
+
+        const importedViewPreference = importedData && importedData.viewPreference;
+        if (importedViewPreference === 'list' || importedViewPreference === 'grid') {
+            await this.saveViewPreference(importedViewPreference);
+        }
+
+        return sanitizedFolders;
+    },
+
+    /**
      * Save view preference (list or grid)
      * @param {string} view - 'list' or 'grid'
      */

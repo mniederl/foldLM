@@ -13,7 +13,8 @@
 .nlm-create-folder-dialog *,
 .nlm-folder-context-menu,
 .nlm-folder-context-menu *,
-.nlm-folders-header {
+.nlm-folders-header,
+.nlm-folders-header-btn {
   font-family: "Google Sans", Roboto, Arial, sans-serif !important;
 }
 
@@ -341,12 +342,55 @@
   margin-bottom: 24px;
 }
 
+.nlm-folders-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
 .nlm-folders-header {
   font-size: 14px;
   font-weight: 500;
   color: var(--header-text-color);
-  margin-bottom: 16px;
+  margin: 0;
+  margin-block: 0;
+  line-height: 1.2;
   padding-left: 0;
+}
+
+.nlm-folders-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nlm-folders-header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--create-btn-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--create-btn-text-color);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.nlm-folders-header-btn:hover {
+  background: rgba(237, 239, 250, 0.95);
+  border-color: #c7cfef;
+  transform: translateY(-1px);
+}
+
+h2.nlm-folders-header.projects-header.mat-headline-small {
+  margin-block: 0 !important;
 }
 
 .nlm-folders-grid {

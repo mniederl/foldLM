@@ -9,6 +9,7 @@ const FolderUI = {
   createDialog: null,
   deleteDialog: null,
   renameDialog: null,
+  importInput: null,
   currentView: 'list', // 'list' or 'grid'
   isInitialized: false,
   isInjecting: false,
@@ -64,6 +65,99 @@ const FolderUI = {
     }
 
     return url;
+  },
+
+  getBackupFilename() {
+    const safeAccount = (FolderStorage.accountId || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const date = new Date().toISOString().slice(0, 10);
+    return `foldlm-${safeAccount}-${date}.json`;
+  },
+
+  async exportFolders() {
+    try {
+      const payload = await FolderStorage.exportData();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = this.getBackupFilename();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('🗂️ Error exporting folders:', error);
+      window.alert('Export failed. Check the console for details.');
+    }
+  },
+
+  ensureImportInput() {
+    if (this.importInput && document.body.contains(this.importInput)) return this.importInput;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.className = 'nlm-import-input';
+    input.style.display = 'none';
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      await this.importFolders(file);
+      input.value = '';
+    });
+
+    document.body.appendChild(input);
+    this.importInput = input;
+    return input;
+  },
+
+  async importFolders(file) {
+    try {
+      const fileText = await file.text();
+      const importedData = JSON.parse(fileText);
+      const rawFolders = Array.isArray(importedData)
+        ? importedData
+        : Array.isArray(importedData?.folders)
+          ? importedData.folders
+          : null;
+
+      if (!rawFolders) {
+        throw new Error('Invalid import file format.');
+      }
+
+      const folderCount = rawFolders.length;
+
+      if (!window.confirm(`Import ${folderCount} folder${folderCount === 1 ? '' : 's'}? This will replace the folders stored for the current NotebookLM account in this browser profile.`)) {
+        return;
+      }
+
+      await FolderStorage.importData(importedData);
+      await this.loadViewPreference();
+      await this.renderFolders();
+      if (window.DragDrop?.hideNotebooksInFolders) {
+        await window.DragDrop.hideNotebooksInFolders();
+      }
+      window.alert(`Imported ${folderCount} folder${folderCount === 1 ? '' : 's'}.`);
+    } catch (error) {
+      console.error('🗂️ Error importing folders:', error);
+      window.alert('Import failed. Use a valid foldLM export JSON file.');
+    }
+  },
+
+  attachHeaderControls(section) {
+    const exportBtn = section.querySelector('[data-action="export-folders"]');
+    const importBtn = section.querySelector('[data-action="import-folders"]');
+
+    if (!exportBtn || !importBtn) return;
+
+    exportBtn.addEventListener('click', () => {
+      this.exportFolders();
+    });
+
+    importBtn.addEventListener('click', () => {
+      const input = this.ensureImportInput();
+      input.click();
+    });
   },
 
   /**
@@ -510,7 +604,13 @@ const FolderUI = {
       const section = document.createElement('div');
       section.className = 'nlm-folders-section';
       section.innerHTML = `
-        <h2 class="nlm-folders-header projects-header mat-headline-small">My folders</h2>
+        <div class="nlm-folders-header-row">
+          <h2 class="nlm-folders-header projects-header mat-headline-small">My folders</h2>
+          <div class="nlm-folders-header-actions">
+            <button type="button" class="nlm-folders-header-btn" data-action="export-folders">Export</button>
+            <button type="button" class="nlm-folders-header-btn" data-action="import-folders">Import</button>
+          </div>
+        </div>
         <div class="nlm-folders-grid"></div>
       `;
 
@@ -538,6 +638,7 @@ const FolderUI = {
         }
       }
 
+      this.attachHeaderControls(section);
       this.renderFolders();
     } catch (e) {
       console.error('🗂️ Error injecting folder section:', e);
