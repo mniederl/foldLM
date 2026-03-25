@@ -1,6 +1,6 @@
 /**
  * NotebookLM Folders - Storage Module
- * Handles persistence of folder data using chrome.storage.local
+ * Handles persistence of folder data using chrome.storage.sync
  */
 
 const FolderStorage = {
@@ -35,6 +35,14 @@ const FolderStorage = {
     },
 
     /**
+     * Get the storage area used for cross-device sync.
+     * Chrome falls back to local behavior when sync is unavailable/disabled.
+     */
+    getStorageArea() {
+        return chrome.storage.sync;
+    },
+
+    /**
      * Get all folders from storage
      * @returns {Promise<Array>} Array of folder objects
      */
@@ -45,14 +53,14 @@ const FolderStorage = {
         }
 
         try {
-            const result = await chrome.storage.local.get(this.STORAGE_KEY);
+            const result = await this.getStorageArea().get(this.STORAGE_KEY);
             return result[this.STORAGE_KEY] || [];
         } catch (error) {
             // Suppress error in dashboard if it's a context invalidated error
             if (error.message?.includes('Extension context invalidated')) {
                 console.log('FolderStorage: Context invalidated while getting folders.');
             } else {
-                console.error('FolderStorage: Error getting folders', error);
+                console.error('FolderStorage: Error getting synced folders', error);
             }
             return [];
         }
@@ -66,12 +74,14 @@ const FolderStorage = {
         if (!this.isContextValid()) return;
 
         try {
-            await chrome.storage.local.set({ [this.STORAGE_KEY]: folders });
+            await this.getStorageArea().set({ [this.STORAGE_KEY]: folders });
         } catch (error) {
             if (error.message?.includes('Extension context invalidated')) {
                 console.log('FolderStorage: Context invalidated while saving folders.');
+            } else if (error.message?.includes('QUOTA_BYTES')) {
+                console.error('FolderStorage: Sync storage quota exceeded while saving folders.', error);
             } else {
-                console.error('FolderStorage: Error saving folders', error);
+                console.error('FolderStorage: Error saving synced folders', error);
             }
         }
     },
@@ -184,9 +194,9 @@ const FolderStorage = {
     async saveViewPreference(view) {
         if (!this.isContextValid()) return;
         try {
-            await chrome.storage.local.set({ nlm_view_pref: view });
+            await this.getStorageArea().set({ nlm_view_pref: view });
         } catch (error) {
-            console.error('FolderStorage: Error saving view preference', error);
+            console.error('FolderStorage: Error saving synced view preference', error);
         }
     },
 
@@ -197,10 +207,10 @@ const FolderStorage = {
     async getViewPreference() {
         if (!this.isContextValid()) return 'list';
         try {
-            const result = await chrome.storage.local.get('nlm_view_pref');
+            const result = await this.getStorageArea().get('nlm_view_pref');
             return result.nlm_view_pref || 'list';
         } catch (error) {
-            console.error('FolderStorage: Error getting view preference', error);
+            console.error('FolderStorage: Error getting synced view preference', error);
             return 'list';
         }
     }
