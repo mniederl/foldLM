@@ -192,7 +192,7 @@ const FolderUI = {
           
           <div class="nlm-dialog-field">
             <label class="nlm-dialog-label">Folder name</label>
-            <input type="text" class="nlm-dialog-input" placeholder="Enter folder name" maxlength="50">
+            <input type="text" class="nlm-dialog-input" name="nlm-folder-title" placeholder="Enter folder title" maxlength="50" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-bwignore="true" data-1p-ignore="true" data-lpignore="true">
           </div>
           
           <div class="nlm-dialog-field">
@@ -376,7 +376,7 @@ const FolderUI = {
           </div>
 
           <div class="nlm-input-group">
-            <input type="text" class="nlm-custom-input" placeholder=" " maxlength="50" spellcheck="false">
+            <input type="text" class="nlm-custom-input" name="nlm-folder-title-edit" placeholder=" " maxlength="50" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-bwignore="true" data-1p-ignore="true" data-lpignore="true">
             <label class="nlm-floating-label">Folder title *</label>
           </div>
 
