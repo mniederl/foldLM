@@ -1344,6 +1344,10 @@ h2.nlm-modal-heading {
   height: 64px;
 }
 
+.nlm-rename-color-section {
+  margin-bottom: 24px;
+}
+
 .nlm-custom-input {
   width: 100%;
   height: 100%;

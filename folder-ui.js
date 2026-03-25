@@ -380,6 +380,11 @@ const FolderUI = {
             <label class="nlm-floating-label">Folder title *</label>
           </div>
 
+          <div class="nlm-rename-color-section">
+            <label class="nlm-dialog-label">Color</label>
+            <div class="nlm-color-picker"></div>
+          </div>
+
           <div class="nlm-rename-actions">
             <button type="button" class="nlm-btn ripple-btn nlm-rename-cancel">
               <span class="btn-label">Cancel</span>
@@ -393,6 +398,7 @@ const FolderUI = {
 
       const emojiCircle = overlay.querySelector('.nlm-rename-icon-circle');
       const popover = overlay.querySelector('.nlm-advanced-picker-popover');
+      const colorPicker = overlay.querySelector('.nlm-color-picker');
 
       const picker = AdvancedEmojiPicker.create((emoji) => {
         emojiCircle.textContent = emoji;
@@ -400,6 +406,19 @@ const FolderUI = {
         popover.style.display = 'none';
       });
       popover.appendChild(picker);
+
+      this.colors.forEach((color) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'nlm-color-option';
+        btn.style.backgroundColor = color.value;
+        btn.dataset.color = color.value;
+        btn.addEventListener('click', () => {
+          colorPicker.querySelectorAll('.nlm-color-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+        colorPicker.appendChild(btn);
+      });
 
       emojiCircle.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1205,8 +1224,9 @@ const FolderUI = {
     const emojiCircle = dialog.querySelector('.nlm-rename-icon-circle');
     const saveBtn = dialog.querySelector('.nlm-rename-save');
     const popover = dialog.querySelector('.nlm-advanced-picker-popover');
+    const colorOptions = dialog.querySelectorAll('.nlm-color-option');
 
-    if (!input || !emojiCircle || !saveBtn || !popover) {
+    if (!input || !emojiCircle || !saveBtn || !popover || colorOptions.length === 0) {
       console.warn('🗂️ Rename dialog structure corrupted, rebuilding...');
       this.renameDialog.remove();
       this.renameDialog = null;
@@ -1219,6 +1239,9 @@ const FolderUI = {
     emojiCircle.textContent = folder.emoji;
     emojiCircle.dataset.emoji = folder.emoji;
     popover.style.display = 'none';
+    colorOptions.forEach((b) => {
+      b.classList.toggle('selected', b.dataset.color === folder.color);
+    });
 
     // Remove old save listeners by cloning
     const newSaveBtn = saveBtn.cloneNode(true);
@@ -1231,6 +1254,7 @@ const FolderUI = {
     const handleSave = async () => {
       const newName = input.value.trim();
       const newEmoji = emojiCircle.dataset.emoji || folder.emoji;
+      const newColor = dialog.querySelector('.nlm-color-option.selected')?.dataset.color || folder.color;
 
       if (!newName) {
         input.value = ''; // Ensure placeholder shows for red state
@@ -1240,7 +1264,8 @@ const FolderUI = {
 
       await FolderStorage.updateFolder(folder.id, {
         name: newName,
-        emoji: newEmoji
+        emoji: newEmoji,
+        color: newColor
       });
       this.hideRenameDialog();
       this.renderFolders();
