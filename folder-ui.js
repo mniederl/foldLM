@@ -510,6 +510,7 @@ const FolderUI = {
         btn.addEventListener('click', () => {
           colorPicker.querySelectorAll('.nlm-color-option').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
+          emojiCircle.style.backgroundColor = color.value;
         });
         colorPicker.appendChild(btn);
       });
@@ -1339,6 +1340,7 @@ const FolderUI = {
     input.value = folder.name;
     emojiCircle.textContent = folder.emoji;
     emojiCircle.dataset.emoji = folder.emoji;
+    emojiCircle.style.backgroundColor = folder.color || '#F8CCC8';
     popover.style.display = 'none';
     colorOptions.forEach((b) => {
       b.classList.toggle('selected', b.dataset.color === folder.color);

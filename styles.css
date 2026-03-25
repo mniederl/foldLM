@@ -11,6 +11,8 @@
 .nlm-folder-modal *,
 .nlm-create-folder-dialog,
 .nlm-create-folder-dialog *,
+.nlm-rename-dialog-card,
+.nlm-rename-dialog-card *,
 .nlm-folder-context-menu,
 .nlm-folder-context-menu *,
 .nlm-folders-header,
@@ -796,6 +798,7 @@ h2.nlm-modal-heading {
 .nlm-dialog-label {
   display: block;
   font-size: 12px;
+  font-family: "Google Sans Text", "Google Sans", Roboto, Arial, sans-serif !important;
   color: var(--input-label-idle);
   margin-bottom: 8px;
   transition: color 0.2s ease;
